@@ -1,243 +1,165 @@
-# 🌆 Coder City — Your Coding Journey, Reimagined in 3D
+<div align="center">
 
-<p align="center">
-  <strong>Every line of code builds something bigger.</strong>
-</p>
+# 🌆 Coder City
 
-<p align="center">
-  An immersive, interactive 3D cyberpunk metropolis generated from your LeetCode submissions and GitHub contributions.
-</p>
+### Turn your LeetCode solves and GitHub commits into a drivable 3D cyberpunk skyline.
 
-<p align="center">
-  <a href="https://coder-city-kunal-srs-projects.vercel.app/">
-    <img src="https://img.shields.io/badge/🚀_LIVE_DEMO-Visit_Coder_City-8B5CF6?style=for-the-badge" alt="Live Demo">
-  </a>
-  <a href="https://github.com/kunalsrivastava9354/Coder-City">
-    <img src="https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github" alt="GitHub Repository">
-  </a>
-</p>
+![Vite](https://img.shields.io/badge/Vite-8.0-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![React](https://img.shields.io/badge/React-19.0-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Three.js](https://img.shields.io/badge/Three.js-r184-black?style=for-the-badge&logo=three.js&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4.0-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![Express](https://img.shields.io/badge/Express-5.0-000000?style=for-the-badge&logo=express&logoColor=white)
 
-<p align="center">
-  <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat&logo=react&logoColor=black">
-  <img src="https://img.shields.io/badge/TypeScript-6-3178C6?style=flat&logo=typescript&logoColor=white">
-  <img src="https://img.shields.io/badge/Three.js-3D-black?style=flat&logo=threedotjs">
-  <img src="https://img.shields.io/badge/Vite-8-646CFF?style=flat&logo=vite&logoColor=white">
-  <img src="https://img.shields.io/badge/License-Not_Specified-lightgrey?style=flat">
-</p>
+[Features](#-features) · [Quick Start](#-quick-start) · [Building Tiers](#-building-tiers) · [Controls](#-controls) · [Project Structure](#-project-structure) · [Credits](#-credits)
+
+</div>
 
 ---
 
-### 🌐 [Coder City Live](https://coder-city-kunal-srs-projects.vercel.app/)
+## ✨ Overview
 
+**Coder City** is an interactive, procedural 3D city builder inspired by [ranjeet22/github-city](https://github.com/ranjeet22/github-city). Every day of your coding history becomes a building: the more problems you solve or commits you push, the taller the tower.
 
----
-
-## 📖 About The Project
-
-**Coder City** is an interactive procedural 3D city visualization inspired by GitHub contribution graphs and LeetCode activity calendars.
-
-What if your coding journey could become an actual city?
-
-Instead of viewing traditional contribution charts and statistics, Coder City transforms your daily programming activity into a futuristic cyberpunk metropolis.
-
-Every day represents a building. Every coding session contributes to the skyline. Your consistency determines how your city grows.
-
-Connect your LeetCode or GitHub account, generate your personalized city, and explore your coding achievements through an immersive 3D driving experience.
-
-**Your code builds your city. Your consistency builds your skyline.**
+Drive down the **Avenue of Algorithms**, inspect any day, flip between sunset and neon night, or sit back and let the cinematic drone tour show off your streak.
 
 ---
 
-## ✨ Features
+## 🌟 Features
 
-### 🏙️ 1. Procedural 3D City Generation
+### 🏙️ 371-Day Procedural Skyline
+- **371-day grid**: 53 weeks × 7 days of activity laid out in a 3D grid centered at `[0, 0, 0]`.
+- **Avenue of Algorithms**: a wide central avenue splits the North and South blocks, lined with streetlights and road markings.
+- **Buildings scale with activity**: each day's solve/commit count decides its building class (see [Building Tiers](#-building-tiers)).
 
-Transform 371 days of coding activity into a fully interactive 3D metropolis.
+### ⚡ Three Data Sources
 
-- 371-day activity grid (53 weeks × 7 days).
-- Dynamically generated buildings based on daily activity.
-- Organized city blocks and a central avenue.
-- Detailed roads, streetlights, and architectural elements.
-- Unique city skyline based on your coding history.
+| Mode | What you get |
+|------|--------------|
+| **LeetCode** | Live GraphQL fetch of your `submissionCalendar`, with total solved, acceptance stats, current and longest streak, and Easy / Medium / Hard breakdown pills. |
+| **GitHub** | Live commit calendar with streaks and total contributions. |
+| **Demo (offline)** | Instant simulated data with organic activity waves and contest-weekend surges. Try the sample profiles `neal_wu`, `tourist`, `torvalds`, or `DemoChampion`. |
 
-### 🏗️ 2. Dynamic Building Classification
+### 🚗 Drivable Vehicle
+- Low-poly sports car with acceleration, friction, a **Spacebar handbrake**, steering yaw, and reverse gear.
+- **Smooth AABB sliding collisions**: the car glides along building walls instead of sticking.
+- **Platform boundaries** keep you inside the city perimeter.
+- **Mobile touch controls** with a virtual joystick and brake button.
 
-Every building represents your daily coding activity.
-
-| Daily Activity | Building Level | Visual Appearance |
-|---|---|---|
-| 0 | Empty Lot | Foundation Platform |
-| 1–2 | Bronze Tech Lab | Emerald Green Building |
-| 3–5 | Silver Engineering Hub | Blue Corporate Building |
-| 6–9 | Gold Algo High-Rise | Violet Skyscraper |
-| 10+ | Diamond Grand Citadel | Multi-tier Fuchsia Tower |
-
-The more you code, the more impressive your skyline becomes!
-
-### 🔗 3. Dual Platform Integration
-
-**LeetCode Integration**
-
-Connect your LeetCode profile and visualize:
-
-- Daily submission activity.
-- Total problems solved.
-- Easy, Medium, and Hard problem breakdown.
-- Current coding streak.
-- Longest coding streak.
-- Global ranking and reputation.
-
-**GitHub Integration**
-
-Connect your GitHub profile and visualize:
-
-- Daily contribution activity.
-- Total contributions.
-- Current activity streak.
-- Longest activity streak.
-- Contribution history.
-
-### 🎮 4. Interactive Driving Experience
-
-Explore your city using a low-poly sports car.
-
-- Vehicle acceleration and deceleration.
-- Forward and reverse movement.
-- Steering and turning physics.
-- Spacebar handbrake.
-- Building collision detection.
-- Smooth wall sliding.
-- City boundary restrictions.
-- Mobile virtual joystick and brake controls.
-
-### 🌅 5. Dynamic Environment
-
-Experience your city in different atmospheric conditions.
-
-- Interactive Day/Night cycle.
-- Golden-hour sunset lighting.
-- Cyberpunk nighttime atmosphere.
-- Custom gradient skybox shader.
-- Procedurally generated glowing windows.
-- 1,000 twinkling stars.
-- Drifting low-poly clouds with shadows.
-
-### 🎥 6. Cinematic Camera System
-
-Explore your metropolis from different perspectives.
-
-- Free orbit camera.
-- Camera rotation, pan, and zoom.
-- Automated cinematic drone tours.
-- Avenue Glide.
-- Orbit Overview.
-- Skyline Sweep.
-
-### 📊 7. Interactive Building Inspector
-
-Inspect individual buildings to explore your coding activity.
-
-View:
-
-- Activity date.
-- Daily submission or contribution count.
-- Building classification.
-- Difficulty breakdown where available.
-
-### 📸 8. Screenshot Export
-
-Capture your generated city using high-resolution WebGL PNG snapshots without HUD overlays.
-
-### 🎭 9. Simulated Demo Mode
-
-Explore Coder City without connecting an account.
-
-- Realistic synthetic coding activity.
-- Organic activity patterns.
-- Weekend contest-style activity surges.
-- Sample profiles:
-  - `neal_wu`
-  - `tourist`
-  - `torvalds`
-  - `DemoChampion`
-
-Demo mode allows you to experience the city generation system without requiring live platform data.
+### 🎥 Atmosphere & Cameras
+- **Day / night cycle**: toggle between sunset golden hour and glowing neon twilight.
+- **Skybox shader**: a 3-stop vertical gradient that blends day into night.
+- **Glowing windows**: procedural canvas textures that light up warm amber after dark.
+- **Starfield & clouds**: 1,000 twinkling stars and drifting low-poly clouds that cast shadows.
+- **Free orbit camera**: rotate, pan, and zoom anywhere.
+- **Cinematic drone tour**: auto-pilot along three paths: *Avenue Glide*, *Orbit Overview*, and *Skyline Sweep*.
+- **Building inspector**: hover or click a building to see its date, solve count, difficulty breakdown, and tier.
+- **PNG snapshot**: export a high-res WebGL screenshot with no HUD overlays.
 
 ---
 
-## 🖼️ Screenshots
+## 🏗️ Building Tiers
 
-<!-- Add your actual application screenshots here -->
-
-<p align="center">
-  <i>More screenshots coming soon.</i>
-</p>
-
-Recommended screenshots:
-
-- Main application interface.
-- Daytime city visualization.
-- Cyberpunk nighttime environment.
-- Interactive driving experience.
-- LeetCode and GitHub activity visualization.
+| Daily solves / commits | Building | Look |
+|:---:|---|---|
+| **0** | Empty Lot | Foundation pad with curb detailing |
+| **1–2** | 🟢 Bronze Tech Lab (small) | Emerald green tech boutique |
+| **3–5** | 🔵 Silver Engineering Hub (medium) | Blue corporate office with rooftop HVAC units |
+| **6–9** | 🟣 Gold Algo High-Rise (skyscraper) | Violet tower with a setback upper tier and cyan neon facade strips |
+| **10+** | 💎 Diamond Grand Citadel (mega tower) | Fuchsia landmark with multi-tier setbacks, a communications spire, and a pulsing red aviation beacon |
 
 ---
 
-## 🛠️ Tech Stack
-
-| Technology | Purpose |
-|---|---|
-| React 19 | Frontend UI |
-| TypeScript | Type-safe development |
-| Three.js | 3D rendering engine |
-| React Three Fiber | React-based 3D scene management |
-| React Three Drei | 3D utilities and helpers |
-| Tailwind CSS 4 | UI styling |
-| Vite 8 | Development and build tooling |
-| Node.js | Backend runtime |
-| Express 5 | Backend API server |
-| Lucide React | Interface icons |
-| LeetCode GraphQL | LeetCode profile and submission data |
-| GitHub GraphQL API | GitHub contribution data |
-
----
-
-## 🚀 Getting Started
-
-Follow these instructions to run Coder City locally.
+## 🚀 Quick Start
 
 ### Prerequisites
+- [Node.js](https://nodejs.org/) (current LTS recommended) and npm
+- A WebGL-capable browser
 
-Make sure you have installed:
-
-- Node.js (compatible with Vite 8).
-- npm.
-- Git.
-- A modern browser with WebGL support.
-
-### 1. Clone the Repository
-
+### Install
 ```bash
-git clone https://github.com/kunalsrivastava9354/Coder-City.git
-```
-
-### 2. Navigate to the Project
-
-```bash
-cd Coder-City
-```
-
-### 3. Install Dependencies
-
-```bash
+git clone <your-repo-url> leetcode-city
+cd leetcode-city
 npm install
 ```
 
-### 4. Configure Environment Variables (Optional)
+### Development (Express backend + Vite frontend)
+```bash
+npm run dev
+```
 
-GitHub authentication is optional. You can configure a GitHub personal access token for authenticated GraphQL requests.
+| Service | URL |
+|---------|-----|
+| Frontend (Vite) | http://localhost:5173 |
+| Backend API proxy (Express) | http://localhost:3001 |
 
-Create a `.env` file in the root directory:
+### Production build
+```bash
+npm run build
+npm start
+```
+Then open http://localhost:3001/.
 
-```env
-PORT=3001
+---
+
+## 🎮 Controls
+
+| Input | Action |
+|-------|--------|
+| Drive keys | Accelerate, brake / reverse, and steer the car |
+| `Space` | Handbrake |
+| Mouse (orbit mode) | Rotate, pan, and zoom the camera |
+| Hover / click a building | Open the building inspector |
+| Touch joystick + brake button | Drive on mobile |
+
+---
+
+## 🧱 Tech Stack
+
+- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS v4
+- **3D engine**: Three.js (procedural geometry, custom skybox shader, canvas-generated textures)
+- **Backend**: Express 5 proxy for the LeetCode (GraphQL) and GitHub APIs, which avoids browser CORS issues
+- **Audio**: background synthwave music manager
+
+---
+
+## 📂 Project Structure
+
+```
+leetcode-city/
+├── dev.js               # Dev orchestrator: launches Express and Vite together
+├── server.js            # Express proxy for the LeetCode & GitHub APIs
+├── vite.config.ts       # Vite build & proxy config
+├── index.html           # Entry HTML
+├── public/              # Static assets, music, icons
+└── src/
+    ├── assets/          # Icons and images
+    ├── game/
+    │   ├── Car.tsx          # Vehicle physics, collisions, controls
+    │   └── CityScene.tsx    # 3D canvas, procedural city, HUD, shaders
+    ├── pages/
+    │   └── Home.tsx         # Platform selector, username input, heatmap preview
+    ├── services/
+    │   ├── api.ts           # LeetCode & GitHub services + mock data generator
+    │   └── audio.ts         # Synthwave music manager
+    ├── App.tsx          # Routing & state management
+    ├── main.tsx         # React root
+    └── index.css        # Tailwind styles
+```
+
+---
+
+## 🤝 Contributing
+
+Ideas, bug reports, and pull requests are welcome. Fork the repo, create a branch, and open a PR describing your change.
+
+---
+
+## 🙏 Credits
+
+Inspired by [ranjeet22/github-city](https://github.com/ranjeet22/github-city). Built with [Three.js](https://threejs.org/), [React](https://react.dev/), and [Vite](https://vite.dev/).
+
+<div align="center">
+
+**Keep solving. Keep shipping. Watch your city grow. 🌃**
+
+</div>
