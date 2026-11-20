@@ -15,6 +15,17 @@ const __dirname = path.dirname(__filename);
 
 app.use(express.json());
 
+// Enable CORS for Vercel and cross-origin requests
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 // In-memory cache for API responses (10 minutes TTL)
 const cache = new Map();
 const CACHE_TTL_MS = 10 * 60 * 1000;
@@ -83,15 +94,15 @@ function build371DayGrid(dateMap, defaultDifficultyRatios = { easy: 0.5, medium:
   }
 
   for (let i = 0; i < 371; i++) {
-    const cur = new Date(startDate);
-    cur.setDate(startDate.getDate() + i);
-    const dateStr = cur.toISOString().split('T')[0];
+    const curDate = new Date(startDate);
+    curDate.setDate(startDate.getDate() + i);
+    const dateStr = curDate.toISOString().split('T')[0];
     const count = dateMap[dateStr] || 0;
 
     days.push({
       date: dateStr,
       count,
-      dayOfWeek: cur.getDay(),
+      dayOfWeek: curDate.getDay(),
     });
   }
 
@@ -100,7 +111,7 @@ function build371DayGrid(dateMap, defaultDifficultyRatios = { easy: 0.5, medium:
   const grid = days.map((d, idx) => {
     const hard = Math.floor(d.count * defaultDifficultyRatios.hard);
     const medium = Math.floor(d.count * defaultDifficultyRatios.medium);
-    const easy = d.count > 0 ? d.count - hard - medium : 0;
+    const easy = d.count - hard - medium;
 
     return {
       x: Math.floor(idx / 7),
@@ -109,7 +120,14 @@ function build371DayGrid(dateMap, defaultDifficultyRatios = { easy: 0.5, medium:
       date: d.date,
       dayOfWeek: d.dayOfWeek,
       tier: getBuildingTier(d.count),
-      breakdown: d.count > 0 ? { easy, medium, hard } : undefined,
+      breakdown:
+        d.count > 0
+          ? {
+              easy,
+              medium,
+              hard,
+            }
+          : undefined,
     };
   });
 
@@ -117,9 +135,18 @@ function build371DayGrid(dateMap, defaultDifficultyRatios = { easy: 0.5, medium:
 }
 
 // ==========================================
+// API ROUTER (Mounted on both /api and / to handle Vercel rewrite prefix stripping)
+// ==========================================
+const apiRouter = express.Router();
+
+apiRouter.get('/health', (req, res) => {
+  res.json({ status: 'ok', server: 'Coder City API', timestamp: Date.now() });
+});
+
+// ==========================================
 // 1. LEETCODE SUBMISSIONS ENDPOINT
 // ==========================================
-app.get('/api/leetcode/:username', async (req, res) => {
+apiRouter.get('/leetcode/:username', async (req, res) => {
   const username = req.params.username.trim();
   if (!username) {
     return res.status(400).json({ error: 'LeetCode username is required.' });
@@ -131,34 +158,35 @@ app.get('/api/leetcode/:username', async (req, res) => {
     return res.json(cached.data);
   }
 
-  const leetcodeGql = `
-    query getUserProfile($username: String!) {
-      matchedUser(username: $username) {
-        username
-        profile {
-          realName
-          userAvatar
-          ranking
-          reputation
-        }
-        submitStatsGlobal {
-          acSubmissionNum {
-            difficulty
-            count
-            submissions
+  // Strategy 1: Official LeetCode GraphQL API
+  try {
+    const leetcodeGql = `
+      query getUserProfile($username: String!) {
+        matchedUser(username: $username) {
+          username
+          profile {
+            realName
+            userAvatar
+            ranking
+            reputation
+          }
+          submitStatsGlobal {
+            acSubmissionNum {
+              difficulty
+              count
+              submissions
+            }
+          }
+          userCalendar {
+            activeYears
+            streak
+            totalActiveDays
+            submissionCalendar
           }
         }
-        userCalendar {
-          activeYears
-          streak
-          totalActiveDays
-          submissionCalendar
-        }
       }
-    }
-  `;
+    `;
 
-  try {
     const response = await fetch('https://leetcode.com/graphql', {
       method: 'POST',
       headers: {
@@ -173,90 +201,209 @@ app.get('/api/leetcode/:username', async (req, res) => {
       }),
     });
 
-    if (!response.ok) {
-      throw new Error(`LeetCode GraphQL returned HTTP ${response.status}`);
-    }
+    if (response.ok) {
+      const result = await response.json();
+      if (result.data?.matchedUser) {
+        const matchedUser = result.data.matchedUser;
 
-    const result = await response.json();
-
-    if (result.errors && (!result.data || !result.data.matchedUser)) {
-      return res.status(404).json({ error: `LeetCode user "${username}" not found.` });
-    }
-
-    const matchedUser = result.data?.matchedUser;
-    if (!matchedUser) {
-      return res.status(404).json({ error: `LeetCode user "${username}" not found.` });
-    }
-
-    // Extract calendar submission counts
-    let dateMap = {};
-    let totalSubmissions = 0;
-    const calendarStr = matchedUser.userCalendar?.submissionCalendar;
-    if (calendarStr) {
-      try {
-        const rawCalendar = JSON.parse(calendarStr);
-        for (const [timestamp, count] of Object.entries(rawCalendar)) {
-          const date = new Date(parseInt(timestamp, 10) * 1000).toISOString().split('T')[0];
-          dateMap[date] = (dateMap[date] || 0) + Number(count);
-          totalSubmissions += Number(count);
+        let dateMap = {};
+        let totalSubmissions = 0;
+        const calendarStr = matchedUser.userCalendar?.submissionCalendar;
+        if (calendarStr) {
+          try {
+            const rawCalendar = JSON.parse(calendarStr);
+            for (const [timestamp, count] of Object.entries(rawCalendar)) {
+              const date = new Date(parseInt(timestamp, 10) * 1000).toISOString().split('T')[0];
+              dateMap[date] = (dateMap[date] || 0) + Number(count);
+              totalSubmissions += Number(count);
+            }
+          } catch (err) {
+            console.error('Error parsing submissionCalendar JSON:', err);
+          }
         }
-      } catch (err) {
-        console.error('Error parsing submissionCalendar JSON:', err);
+
+        const stats = matchedUser.submitStatsGlobal?.acSubmissionNum || [];
+        let easySolved = 0;
+        let mediumSolved = 0;
+        let hardSolved = 0;
+        let totalSolved = 0;
+
+        stats.forEach((s) => {
+          if (s.difficulty === 'All') totalSolved = s.count;
+          if (s.difficulty === 'Easy') easySolved = s.count;
+          if (s.difficulty === 'Medium') mediumSolved = s.count;
+          if (s.difficulty === 'Hard') hardSolved = s.count;
+        });
+
+        const easyRatio = totalSolved > 0 ? easySolved / totalSolved : 0.5;
+        const mediumRatio = totalSolved > 0 ? mediumSolved / totalSolved : 0.35;
+        const hardRatio = totalSolved > 0 ? hardSolved / totalSolved : 0.15;
+
+        const { grid, currentStreak, longestStreak } = build371DayGrid(dateMap, {
+          easy: easyRatio,
+          medium: mediumRatio,
+          hard: hardRatio,
+        });
+
+        const responseData = {
+          platform: 'leetcode',
+          username: matchedUser.username,
+          displayName: matchedUser.profile?.realName || matchedUser.username,
+          avatar: matchedUser.profile?.userAvatar,
+          totalSubmissions: totalSubmissions || totalSolved,
+          currentStreak: matchedUser.userCalendar?.streak || currentStreak,
+          longestStreak: longestStreak,
+          grid,
+          isMock: false,
+          leetcodeStats: {
+            easySolved,
+            mediumSolved,
+            hardSolved,
+            totalSolved,
+            ranking: matchedUser.profile?.ranking || 0,
+            reputation: matchedUser.profile?.reputation || 0,
+          },
+        };
+
+        cache.set(cacheKey, { timestamp: Date.now(), data: responseData });
+        return res.json(responseData);
+      } else if (result.errors && (!result.data || !result.data.matchedUser)) {
+        return res.status(404).json({ error: `LeetCode user "${username}" not found.` });
       }
     }
-
-    // Solve stats
-    const stats = matchedUser.submitStatsGlobal?.acSubmissionNum || [];
-    let easySolved = 0;
-    let mediumSolved = 0;
-    let hardSolved = 0;
-    let totalSolved = 0;
-
-    stats.forEach((s) => {
-      if (s.difficulty === 'All') totalSolved = s.count;
-      if (s.difficulty === 'Easy') easySolved = s.count;
-      if (s.difficulty === 'Medium') mediumSolved = s.count;
-      if (s.difficulty === 'Hard') hardSolved = s.count;
-    });
-
-    const easyRatio = totalSolved > 0 ? easySolved / totalSolved : 0.5;
-    const mediumRatio = totalSolved > 0 ? mediumSolved / totalSolved : 0.35;
-    const hardRatio = totalSolved > 0 ? hardSolved / totalSolved : 0.15;
-
-    const { grid, currentStreak, longestStreak } = build371DayGrid(dateMap, {
-      easy: easyRatio,
-      medium: mediumRatio,
-      hard: hardRatio,
-    });
-
-    const responseData = {
-      platform: 'leetcode',
-      username: matchedUser.username,
-      displayName: matchedUser.profile?.realName || matchedUser.username,
-      avatar: matchedUser.profile?.userAvatar,
-      totalSubmissions: totalSubmissions || totalSolved,
-      currentStreak: matchedUser.userCalendar?.streak || currentStreak,
-      longestStreak: longestStreak,
-      grid,
-      isMock: false,
-      leetcodeStats: {
-        easySolved,
-        mediumSolved,
-        hardSolved,
-        totalSolved,
-        ranking: matchedUser.profile?.ranking || 0,
-        reputation: matchedUser.profile?.reputation || 0,
-      },
-    };
-
-    cache.set(cacheKey, { timestamp: Date.now(), data: responseData });
-    return res.json(responseData);
-  } catch (error) {
-    console.error('LeetCode API error:', error.message);
-    return res.status(500).json({
-      error: `Could not retrieve live LeetCode stats for "${username}". (${error.message})`,
-    });
+  } catch (err) {
+    console.warn('Official LeetCode GraphQL fetch failed, trying public mirror...', err.message);
   }
+
+  // Strategy 2: Fallback to high-reliability public mirror (alfa-leetcode-api)
+  try {
+    const mirrorRes = await fetch(
+      `https://alfa-leetcode-api.onrender.com/userProfile/${encodeURIComponent(username)}`,
+      { headers: { 'User-Agent': 'Coder-City-App' } }
+    );
+
+    if (mirrorRes.ok) {
+      const data = await mirrorRes.json();
+      if (data && (data.totalSolved !== undefined || data.submissionCalendar)) {
+        let dateMap = {};
+        let totalSubmissions = 0;
+        let cal = data.submissionCalendar;
+        if (typeof cal === 'string') {
+          try { cal = JSON.parse(cal); } catch {}
+        }
+        if (cal && typeof cal === 'object') {
+          for (const [timestamp, count] of Object.entries(cal)) {
+            const date = new Date(parseInt(timestamp, 10) * 1000).toISOString().split('T')[0];
+            dateMap[date] = (dateMap[date] || 0) + Number(count);
+            totalSubmissions += Number(count);
+          }
+        }
+
+        const easySolved = data.easySolved || 0;
+        const mediumSolved = data.mediumSolved || 0;
+        const hardSolved = data.hardSolved || 0;
+        const totalSolved = data.totalSolved || (easySolved + mediumSolved + hardSolved);
+
+        const easyRatio = totalSolved > 0 ? easySolved / totalSolved : 0.5;
+        const mediumRatio = totalSolved > 0 ? mediumSolved / totalSolved : 0.35;
+        const hardRatio = totalSolved > 0 ? hardSolved / totalSolved : 0.15;
+
+        const { grid, currentStreak, longestStreak } = build371DayGrid(dateMap, {
+          easy: easyRatio,
+          medium: mediumRatio,
+          hard: hardRatio,
+        });
+
+        const responseData = {
+          platform: 'leetcode',
+          username: username,
+          displayName: username,
+          totalSubmissions: totalSubmissions || totalSolved,
+          currentStreak,
+          longestStreak,
+          grid,
+          isMock: false,
+          leetcodeStats: {
+            easySolved,
+            mediumSolved,
+            hardSolved,
+            totalSolved,
+            ranking: data.ranking || 0,
+            reputation: data.reputation || 0,
+          },
+        };
+
+        cache.set(cacheKey, { timestamp: Date.now(), data: responseData });
+        return res.json(responseData);
+      }
+    } else if (mirrorRes.status === 404) {
+      return res.status(404).json({ error: `LeetCode user "${username}" not found.` });
+    }
+  } catch (err) {
+    console.warn('Mirror 1 failed, trying mirror 2...', err.message);
+  }
+
+  // Strategy 3: Faisal Shohag mirror
+  try {
+    const mirrorRes2 = await fetch(
+      `https://leetcode-api-faisalshohag.vercel.app/${encodeURIComponent(username)}`,
+      { headers: { 'User-Agent': 'Coder-City-App' } }
+    );
+
+    if (mirrorRes2.ok) {
+      const data = await mirrorRes2.json();
+      if (data && (data.totalSolved !== undefined || data.submissionCalendar)) {
+        let dateMap = {};
+        let totalSubmissions = 0;
+        let cal = data.submissionCalendar;
+        if (typeof cal === 'string') {
+          try { cal = JSON.parse(cal); } catch {}
+        }
+        if (cal && typeof cal === 'object') {
+          for (const [timestamp, count] of Object.entries(cal)) {
+            const date = new Date(parseInt(timestamp, 10) * 1000).toISOString().split('T')[0];
+            dateMap[date] = (dateMap[date] || 0) + Number(count);
+            totalSubmissions += Number(count);
+          }
+        }
+
+        const easySolved = data.easySolved || 0;
+        const mediumSolved = data.mediumSolved || 0;
+        const hardSolved = data.hardSolved || 0;
+        const totalSolved = data.totalSolved || (easySolved + mediumSolved + hardSolved);
+
+        const { grid, currentStreak, longestStreak } = build371DayGrid(dateMap);
+        const responseData = {
+          platform: 'leetcode',
+          username: username,
+          displayName: username,
+          totalSubmissions: totalSubmissions || totalSolved,
+          currentStreak,
+          longestStreak,
+          grid,
+          isMock: false,
+          leetcodeStats: {
+            easySolved,
+            mediumSolved,
+            hardSolved,
+            totalSolved,
+            ranking: data.ranking || 0,
+          },
+        };
+
+        cache.set(cacheKey, { timestamp: Date.now(), data: responseData });
+        return res.json(responseData);
+      }
+    } else if (mirrorRes2.status === 404) {
+      return res.status(404).json({ error: `LeetCode user "${username}" not found.` });
+    }
+  } catch (err) {
+    console.warn('Mirror 2 failed:', err.message);
+  }
+
+  return res.status(502).json({
+    error: `Could not connect to LeetCode to retrieve stats for "${username}". Please verify the username or use Simulated Demo mode.`,
+  });
 });
 
 // ==========================================
@@ -282,7 +429,7 @@ const githubGql = `
   }
 `;
 
-app.get('/api/github/:username', async (req, res) => {
+apiRouter.get('/github/:username', async (req, res) => {
   const username = req.params.username.trim();
   if (!username) {
     return res.status(400).json({ error: 'GitHub username is required.' });
@@ -290,7 +437,6 @@ app.get('/api/github/:username', async (req, res) => {
 
   const cacheKey = `github:${username.toLowerCase()}`;
   const cached = cache.get(cacheKey);
-  // Only use cache if it was successful and had submissions
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS && cached.data.totalSubmissions > 0) {
     return res.json(cached.data);
   }
@@ -359,7 +505,7 @@ app.get('/api/github/:username', async (req, res) => {
     }
   }
 
-  // 2. High-performance public GitHub contributions API (No token required, works for any public user)
+  // 2. High-performance public GitHub contributions API (No token required, works for all public users)
   try {
     const pubRes = await fetch(
       `https://github-contributions-api.jogruber.de/v4/${encodeURIComponent(username)}?y=last`,
@@ -461,15 +607,24 @@ app.get('/api/github/:username', async (req, res) => {
   });
 });
 
-// Production: Serve static client assets
+// Mount the router on both /api and / to handle Vercel rewrite prefix stripping
+app.use('/api', apiRouter);
+app.use('/', apiRouter);
+
+// Production: Serve static client assets if dist exists and not on Vercel
 const distPath = path.resolve(__dirname, 'dist');
-if (fs.existsSync(distPath)) {
+if (fs.existsSync(distPath) && !process.env.VERCEL) {
   app.use(express.static(distPath));
   app.get('*any', (req, res) => {
     res.sendFile(path.resolve(distPath, 'index.html'));
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`Backend server running on http://localhost:${PORT}`);
-});
+// Only listen when running standalone (not inside Vercel serverless lambda)
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Backend server running on http://localhost:${PORT}`);
+  });
+}
+
+export default app;
