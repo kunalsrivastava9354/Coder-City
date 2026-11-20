@@ -296,7 +296,7 @@ export const Home: React.FC<HomeProps> = ({ onGenerate }) => {
   }
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-slate-950 text-white flex items-center justify-center font-sans">
+    <div className="relative w-full min-h-[100dvh] h-[100dvh] overflow-hidden bg-slate-950 text-white flex items-center justify-center font-sans">
       {/* 3D Wireframe Canvas */}
       <div className="absolute inset-0 z-0">
         <Canvas camera={{ position: [0, 6, 15], fov: 55 }}>
@@ -308,14 +308,14 @@ export const Home: React.FC<HomeProps> = ({ onGenerate }) => {
       </div>
 
       {/* Main Container */}
-      <div className="relative z-10 w-full max-h-screen overflow-y-auto py-8 flex justify-center">
+      <div className="relative z-10 w-full max-h-[100dvh] overflow-y-auto py-4 sm:py-8 flex justify-center">
         <div
-          className={`w-full ${cityData ? 'max-w-3xl' : 'max-w-lg'} px-6 transition-all duration-500`}
+          className={`w-full ${cityData ? 'max-w-3xl' : 'max-w-lg'} px-3.5 sm:px-6 transition-all duration-500`}
         >
-          <div className="bg-transparent border-0 rounded-3xl p-6 md:p-8 flex flex-col items-center">
+          <div className="bg-transparent border-0 rounded-3xl p-3 sm:p-6 md:p-8 flex flex-col items-center">
             {/* Header Title */}
             <div className="flex flex-col items-center text-center mb-6">
-              <h1 className="text-4xl md:text-6xl font-black tracking-tight flex items-center justify-center select-none">
+              <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight flex items-center justify-center select-none">
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-400 via-pink-400 to-indigo-400 drop-shadow-[0_0_25px_rgba(245,158,11,0.35)]">
                   CODER CITY
                 </span>
@@ -323,7 +323,7 @@ export const Home: React.FC<HomeProps> = ({ onGenerate }) => {
             </div>
 
             {/* Platform Selector Tabs */}
-            <div className="w-full grid grid-cols-2 gap-2 bg-slate-950/40 p-1.5 rounded-2xl border-0 mb-6 backdrop-blur-md">
+            <div className="w-full grid grid-cols-2 gap-1.5 sm:gap-2 bg-slate-950/40 p-1 sm:p-1.5 rounded-2xl border-0 mb-4 sm:mb-6 backdrop-blur-md">
               <button
                 type="button"
                 onClick={() => {
@@ -331,7 +331,7 @@ export const Home: React.FC<HomeProps> = ({ onGenerate }) => {
                   setCityData(null)
                   setError(null)
                 }}
-                className={`flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all cursor-pointer ${
                   platform === 'leetcode'
                     ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20'
                     : 'text-slate-400 hover:text-white'
@@ -348,7 +348,7 @@ export const Home: React.FC<HomeProps> = ({ onGenerate }) => {
                   setCityData(null)
                   setError(null)
                 }}
-                className={`flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all cursor-pointer ${
                   platform === 'github'
                     ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/20'
                     : 'text-slate-400 hover:text-white'
@@ -378,12 +378,12 @@ export const Home: React.FC<HomeProps> = ({ onGenerate }) => {
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       placeholder="Enter your username"
-                      className="w-full bg-slate-950/50 border border-slate-800/40 rounded-2xl py-3 px-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all backdrop-blur-md"
+                      className="w-full bg-slate-950/50 border border-slate-800/40 rounded-2xl py-3 sm:py-3.5 pl-3.5 sm:pl-4 pr-24 sm:pr-28 text-base text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all backdrop-blur-md"
                     />
                     <button
                       type="submit"
                       disabled={isGenerating}
-                      className="absolute right-2 top-2 bottom-2 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-pink-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer shadow-md"
+                      className="absolute right-1.5 top-1.5 bottom-1.5 px-3 sm:px-4 rounded-xl bg-gradient-to-r from-amber-500 to-pink-500 text-slate-950 font-bold text-xs flex items-center gap-1 hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer shadow-md"
                     >
                       {isGenerating ? (
                         <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
@@ -451,33 +451,33 @@ export const Home: React.FC<HomeProps> = ({ onGenerate }) => {
                 </div>
 
                 {/* Big Stats Row */}
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 flex flex-col items-center text-center">
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
+                  <div className="bg-slate-950/70 border border-slate-800/80 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 flex flex-col items-center text-center">
                     <Database className="w-5 h-5 text-amber-400 mb-1" />
-                    <span className="text-[10px] text-slate-400 font-semibold uppercase">
+                    <span className="text-[8px] sm:text-[10px] text-slate-400 font-semibold uppercase">
                       {cityData.platform === 'leetcode' ? 'Problems Solved' : 'Total Commits'}
                     </span>
-                    <span className="text-xl font-black text-white mt-0.5">
+                    <span className="text-base sm:text-xl font-black text-white mt-0.5">
                       {cityData.totalSubmissions}
                     </span>
                   </div>
 
-                  <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 flex flex-col items-center text-center">
+                  <div className="bg-slate-950/70 border border-slate-800/80 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 flex flex-col items-center text-center">
                     <TrendingUp className="w-5 h-5 text-emerald-400 mb-1" />
-                    <span className="text-[10px] text-slate-400 font-semibold uppercase">
+                    <span className="text-[8px] sm:text-[10px] text-slate-400 font-semibold uppercase">
                       Current Streak
                     </span>
-                    <span className="text-xl font-black text-white mt-0.5">
+                    <span className="text-base sm:text-xl font-black text-white mt-0.5">
                       {cityData.currentStreak} Days
                     </span>
                   </div>
 
-                  <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 flex flex-col items-center text-center">
+                  <div className="bg-slate-950/70 border border-slate-800/80 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 flex flex-col items-center text-center">
                     <Trophy className="w-5 h-5 text-pink-400 mb-1" />
-                    <span className="text-[10px] text-slate-400 font-semibold uppercase">
+                    <span className="text-[8px] sm:text-[10px] text-slate-400 font-semibold uppercase">
                       Longest Streak
                     </span>
-                    <span className="text-xl font-black text-white mt-0.5">
+                    <span className="text-base sm:text-xl font-black text-white mt-0.5">
                       {cityData.longestStreak} Days
                     </span>
                   </div>
@@ -544,7 +544,7 @@ export const Home: React.FC<HomeProps> = ({ onGenerate }) => {
                 <button
                   type="button"
                   onClick={() => onGenerate(cityData)}
-                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-pink-500 to-indigo-600 text-slate-950 font-black text-base shadow-xl shadow-amber-500/25 hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                  className="w-full py-3.5 sm:py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-pink-500 to-indigo-600 text-slate-950 font-black text-sm sm:text-base shadow-xl shadow-amber-500/25 hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                 >
                   <Play className="w-5 h-5 fill-slate-950" />
                   <span>Enter 3D City Simulation</span>

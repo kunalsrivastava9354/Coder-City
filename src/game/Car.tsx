@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useFrame, useThree } from '@react-three/fiber'
-import { Html } from '@react-three/drei'
 import * as THREE from 'three'
 
 export interface CollisionBox {
@@ -31,7 +31,6 @@ export const Car: React.FC<CarProps> = ({ collisionBoxes, isActive, isNight = tr
 
   // Mobile device detection state
   const [isMobile, setIsMobile] = useState(false)
-  const [joystickPos, setJoystickPos] = useState({ x: 0, y: 0, transition: 'none' })
 
   // Kinematic state tracked in refs for 60fps performance without react re-renders
   const speed = useRef(0)
@@ -70,94 +69,7 @@ export const Car: React.FC<CarProps> = ({ collisionBoxes, isActive, isNight = tr
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // Touch event states and handlers for virtual joystick
-  const joystickTouchId = useRef<number | null>(null)
-  const joystickStart = useRef({ x: 0, y: 0 })
-  const joystickZoneRef = useRef<HTMLDivElement>(null)
 
-  const handleJoystickStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    const touch = e.changedTouches[0]
-    joystickTouchId.current = touch.identifier
-    joystickStart.current = { x: touch.clientX, y: touch.clientY }
-    setJoystickPos({ x: 0, y: 0, transition: 'none' })
-  }
-
-  const handleJoystickMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (joystickTouchId.current === null) return
-    
-    let activeTouch: React.Touch | null = null
-    for (let i = 0; i < e.touches.length; i++) {
-      if (e.touches[i].identifier === joystickTouchId.current) {
-        activeTouch = e.touches[i]
-        break
-      }
-    }
-    
-    if (!activeTouch) return
-
-    const deltaX = activeTouch.clientX - joystickStart.current.x
-    const deltaY = activeTouch.clientY - joystickStart.current.y
-    
-    const maxRadius = 40 // Maximum displacement of knob in pixels
-    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
-    
-    let moveX = deltaX
-    let moveY = deltaY
-    
-    if (distance > maxRadius) {
-      moveX = (deltaX / distance) * maxRadius
-      moveY = (deltaY / distance) * maxRadius
-    }
-    
-    setJoystickPos({ x: moveX, y: moveY, transition: 'none' })
-    
-    // Normalize mapping to [-1, 1]
-    const normX = moveX / maxRadius
-    const normY = moveY / maxRadius
-    
-    // Steer left/right
-    if (normX < -0.2) {
-      keys.current.left = true
-      keys.current.right = false
-    } else if (normX > 0.2) {
-      keys.current.right = true
-      keys.current.left = false
-    } else {
-      keys.current.left = false
-      keys.current.right = false
-    }
-    
-    // Accelerate forward/backward
-    if (normY < -0.2) {
-      keys.current.forward = true
-      keys.current.backward = false
-    } else if (normY > 0.2) {
-      keys.current.backward = true
-      keys.current.forward = false
-    } else {
-      keys.current.forward = false
-      keys.current.backward = false
-    }
-  }
-
-  const handleJoystickEnd = () => {
-    joystickTouchId.current = null
-    setJoystickPos({ x: 0, y: 0, transition: 'transform 0.15s ease-out' })
-    
-    // Reset keys refs
-    keys.current.forward = false
-    keys.current.backward = false
-    keys.current.left = false
-    keys.current.right = false
-  }
-
-  const handleBrakeStart = () => {
-    keys.current.brake = true
-  }
-
-  const handleBrakeEnd = () => {
-    keys.current.brake = false
-  }
 
   // Keyboard listeners
   useEffect(() => {
@@ -309,6 +221,34 @@ export const Car: React.FC<CarProps> = ({ collisionBoxes, isActive, isNight = tr
   const frontRightWheelRef = useRef<THREE.Group>(null)
   const rearLeftWheelRef = useRef<THREE.Group>(null)
   const rearRightWheelRef = useRef<THREE.Group>(null)
+
+  // Unified Touch & Mouse controller event binder for mobile virtual controls
+  const bindControl = (key: 'forward' | 'backward' | 'left' | 'right' | 'brake') => ({
+    onTouchStart: (e: React.TouchEvent) => {
+      e.preventDefault()
+      keys.current[key] = true
+    },
+    onTouchEnd: (e: React.TouchEvent) => {
+      e.preventDefault()
+      keys.current[key] = false
+    },
+    onTouchCancel: (e: React.TouchEvent) => {
+      e.preventDefault()
+      keys.current[key] = false
+    },
+    onMouseDown: (e: React.MouseEvent) => {
+      e.preventDefault()
+      keys.current[key] = true
+    },
+    onMouseUp: (e: React.MouseEvent) => {
+      e.preventDefault()
+      keys.current[key] = false
+    },
+    onMouseLeave: (e: React.MouseEvent) => {
+      e.preventDefault()
+      keys.current[key] = false
+    },
+  })
 
   useFrame((state, delta) => {
     if (!carRef.current) return
@@ -580,44 +520,82 @@ export const Car: React.FC<CarProps> = ({ collisionBoxes, isActive, isNight = tr
         </mesh>
       </group>
 
-      {/* Mobile Joystick & Controls Overlay */}
-      {isMobile && isActive && (
-        <Html fullscreen pointerEvents="none">
-          <div className="absolute inset-0 select-none pointer-events-none font-sans z-50">
-            {/* Joystick (Bottom Left) */}
-            <div className="absolute bottom-8 left-8 w-32 h-32 flex items-center justify-center pointer-events-auto">
-              <div
-                ref={joystickZoneRef}
-                onTouchStart={handleJoystickStart}
-                onTouchMove={handleJoystickMove}
-                onTouchEnd={handleJoystickEnd}
-                className="w-24 h-24 rounded-full bg-slate-900/60 border-2 border-indigo-500/30 backdrop-blur-md flex items-center justify-center shadow-xl active:border-indigo-400/50 transition-colors"
-                style={{ touchAction: 'none' }}
-              >
-                <div
-                  className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-pink-500 border border-white/20 shadow-md"
-                  style={{
-                    transform: `translate(${joystickPos.x}px, ${joystickPos.y}px)`,
-                    transition: joystickPos.transition,
-                    touchAction: 'none'
-                  }}
-                />
-              </div>
-            </div>
+      {/* Mobile Touch Driving HUD Portal */}
+      {isMobile && isActive && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-x-0 bottom-0 z-50 pointer-events-none select-none flex justify-between items-end px-3 pb-5 sm:px-8 sm:pb-8"
+          style={{
+            paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom, 1.25rem))',
+            paddingLeft: 'max(0.75rem, env(safe-area-inset-left, 0.75rem))',
+            paddingRight: 'max(0.75rem, env(safe-area-inset-right, 0.75rem))',
+          }}
+        >
+          {/* Left Thumb: Steering D-Pad */}
+          <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2 bg-slate-950/80 p-1.5 sm:p-2 rounded-3xl border border-slate-800/80 backdrop-blur-lg shadow-2xl">
+            <button
+              {...bindControl('left')}
+              className="w-13 h-13 sm:w-16 sm:h-16 rounded-2xl bg-slate-900/90 border-2 border-indigo-500/40 active:border-indigo-400 active:bg-indigo-600/40 text-indigo-300 active:text-white font-bold flex flex-col items-center justify-center shadow-lg transition-transform active:scale-95 cursor-pointer touch-none select-none"
+              aria-label="Steer Left"
+            >
+              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider mt-0.5">Left</span>
+            </button>
 
-            {/* Brake Button (Bottom Right) */}
-            <div className="absolute bottom-10 right-10 pointer-events-auto">
+            <button
+              {...bindControl('right')}
+              className="w-13 h-13 sm:w-16 sm:h-16 rounded-2xl bg-slate-900/90 border-2 border-indigo-500/40 active:border-indigo-400 active:bg-indigo-600/40 text-indigo-300 active:text-white font-bold flex flex-col items-center justify-center shadow-lg transition-transform active:scale-95 cursor-pointer touch-none select-none"
+              aria-label="Steer Right"
+            >
+              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+              <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider mt-0.5">Right</span>
+            </button>
+          </div>
+
+          {/* Right Thumb: Drive, Reverse, and Brake Pedals */}
+          <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2">
+            {/* Handbrake / Quick Stop */}
+            <button
+              {...bindControl('brake')}
+              className="w-11 h-20 sm:w-13 sm:h-24 rounded-2xl bg-slate-950/80 border border-slate-700/80 active:border-rose-500 active:bg-rose-950/60 text-slate-400 active:text-rose-300 font-bold flex flex-col items-center justify-center shadow-lg transition-transform active:scale-95 cursor-pointer touch-none select-none backdrop-blur-md"
+              aria-label="Brake"
+            >
+              <span className="text-base sm:text-lg">🛑</span>
+              <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider mt-1 text-slate-400">Stop</span>
+            </button>
+
+            {/* Column of Gas & Reverse */}
+            <div className="flex flex-col gap-1.5 sm:gap-2 bg-slate-950/80 p-1.5 sm:p-2 rounded-3xl border border-slate-800/80 backdrop-blur-lg shadow-2xl">
+              {/* Accelerate / Gas */}
               <button
-                onTouchStart={handleBrakeStart}
-                onTouchEnd={handleBrakeEnd}
-                className="w-20 h-20 rounded-full bg-pink-600/30 active:bg-pink-600/60 border-2 border-pink-500/40 active:border-pink-400 backdrop-blur-md text-white font-bold text-[11px] shadow-lg flex items-center justify-center uppercase tracking-wider select-none cursor-pointer"
-                style={{ touchAction: 'none' }}
+                {...bindControl('forward')}
+                className="w-18 h-13 sm:w-22 sm:h-15 rounded-2xl bg-gradient-to-r from-amber-500/90 to-emerald-500/90 active:from-amber-400 active:to-emerald-400 text-slate-950 font-black flex items-center justify-center gap-1 shadow-xl shadow-amber-500/20 transition-transform active:scale-95 cursor-pointer touch-none select-none"
+                aria-label="Drive Forward"
               >
-                Brake
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+                </svg>
+                <span className="text-xs sm:text-sm font-black uppercase tracking-wider">Drive</span>
+              </button>
+
+              {/* Reverse */}
+              <button
+                {...bindControl('backward')}
+                className="w-18 h-11 sm:w-22 sm:h-13 rounded-2xl bg-slate-900/90 border-2 border-pink-500/40 active:border-pink-400 active:bg-pink-600/30 text-pink-300 active:text-white font-bold flex items-center justify-center gap-1 shadow-lg transition-transform active:scale-95 cursor-pointer touch-none select-none"
+                aria-label="Reverse"
+              >
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">Rev</span>
               </button>
             </div>
           </div>
-        </Html>
+        </div>,
+        document.body
       )}
     </group>
   )

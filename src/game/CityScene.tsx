@@ -397,7 +397,7 @@ const FPSCounter: React.FC = () => {
   }, [])
 
   return (
-    <div className="absolute bottom-6 right-6 z-10 bg-slate-900/80 border border-slate-800 rounded-xl px-3 py-1.5 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-mono select-none pointer-events-auto">
+    <div className="absolute top-3 right-16 sm:top-auto sm:bottom-6 sm:right-6 z-10 bg-slate-900/80 border border-slate-800 rounded-xl px-2.5 py-1 sm:px-3 sm:py-1.5 shadow-md backdrop-blur-md flex items-center gap-1.5 text-[11px] sm:text-xs font-mono select-none pointer-events-auto">
       <div
         className={`w-2 h-2 rounded-full ${
           fps >= 55 ? 'bg-emerald-500' : fps >= 30 ? 'bg-amber-500' : 'bg-rose-500'
@@ -723,6 +723,7 @@ export const CityScene: React.FC<CitySceneProps> = ({ userData, onBack }) => {
   const [isMuted, setIsMuted] = useState(() => audioManager.getMuted())
   const [inspectedCell, setInspectedCell] = useState<SubmissionCell | null>(null)
   const [hoveredCell, setHoveredCell] = useState<SubmissionCell | null>(null)
+  const [mobileStatsOpen, setMobileStatsOpen] = useState(false)
 
   useEffect(() => {
     audioManager.init('/music.mp3')
@@ -1044,28 +1045,51 @@ export const CityScene: React.FC<CitySceneProps> = ({ userData, onBack }) => {
       ) : (
         <>
           {/* Top Header HUD */}
-          <div className="absolute top-0 inset-x-0 z-10 p-5 pointer-events-none flex justify-between items-start">
+          <div className="absolute top-0 inset-x-0 z-20 p-3 sm:p-5 pointer-events-none flex justify-between items-start">
             {/* Left Controls */}
-            <div className="pointer-events-auto flex items-center gap-3">
+            <div className="pointer-events-auto flex items-center gap-2 sm:gap-3">
               <button
                 onClick={onBack}
-                className="flex items-center gap-2 bg-slate-900/80 border border-slate-800 text-slate-300 hover:text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all hover:bg-slate-800 backdrop-blur-md active:scale-95 shadow-lg"
+                className="flex items-center gap-1.5 sm:gap-2 bg-slate-900/85 border border-slate-800 text-slate-300 hover:text-white px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all hover:bg-slate-800 backdrop-blur-md active:scale-95 shadow-lg cursor-pointer"
               >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Exit City</span>
+                <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span>Exit</span>
               </button>
 
               <button
                 onClick={toggleMute}
-                className="flex items-center justify-center w-10 h-10 bg-slate-900/80 border border-slate-800 text-slate-300 hover:text-white rounded-xl transition-all hover:bg-slate-800 backdrop-blur-md active:scale-95 shadow-lg cursor-pointer"
+                className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-slate-900/85 border border-slate-800 text-slate-300 hover:text-white rounded-xl transition-all hover:bg-slate-800 backdrop-blur-md active:scale-95 shadow-lg cursor-pointer"
                 title={isMuted ? 'Unmute Soundtrack' : 'Mute Soundtrack'}
               >
                 {isMuted ? <span>🔇</span> : <span className="animate-pulse">🔊</span>}
               </button>
             </div>
 
-            {/* Right City Info & Settings Card */}
-            <div className="pointer-events-auto bg-slate-900/85 border border-slate-800 rounded-2xl p-5 shadow-2xl backdrop-blur-md max-w-sm w-88 flex flex-col gap-3">
+            {/* Mobile Header Buttons (Compact for screens < 768px) */}
+            <div className="pointer-events-auto flex md:hidden items-center gap-1.5">
+              <button
+                onClick={() => setIsNight(!isNight)}
+                className="flex items-center justify-center w-8 h-8 bg-slate-900/85 border border-slate-800 text-white rounded-xl text-xs transition-all active:scale-95 shadow-lg cursor-pointer backdrop-blur-md"
+                title={isNight ? 'Switch to Day' : 'Switch to Night'}
+              >
+                {isNight ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-400" />}
+              </button>
+
+              <button
+                onClick={() => setMobileStatsOpen(!mobileStatsOpen)}
+                className={`flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-lg active:scale-95 cursor-pointer backdrop-blur-md ${
+                  mobileStatsOpen
+                    ? 'bg-amber-500 text-slate-950 shadow-amber-500/25'
+                    : 'bg-slate-900/85 border border-slate-800 text-slate-200'
+                }`}
+              >
+                <span>📊</span>
+                <span>{mobileStatsOpen ? 'Close' : 'Stats'}</span>
+              </button>
+            </div>
+
+            {/* Desktop City Info & Settings Card (Shown on md+ screens) */}
+            <div className="pointer-events-auto hidden md:flex bg-slate-900/85 border border-slate-800 rounded-2xl p-5 shadow-2xl backdrop-blur-md max-w-sm w-88 flex-col gap-3">
               <div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-amber-400 font-bold uppercase tracking-widest flex items-center gap-1">
@@ -1265,11 +1289,117 @@ export const CityScene: React.FC<CitySceneProps> = ({ userData, onBack }) => {
                 </div>
               </div>
             </div>
+
+            {/* Mobile Drawer/Modal when Stats is opened on mobile */}
+            {mobileStatsOpen && (
+              <div className="pointer-events-auto md:hidden fixed inset-x-3 top-14 max-h-[80vh] overflow-y-auto bg-slate-950/95 border border-slate-800 rounded-3xl p-4 shadow-2xl backdrop-blur-xl flex flex-col gap-3 z-50 animate-in fade-in slide-in-from-top-4 duration-200">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <div>
+                    <span className="text-[9px] text-amber-400 font-bold uppercase tracking-widest">
+                      {userData.platform === 'leetcode' ? '⚡ LeetCode City' : '🐙 GitHub City'}
+                    </span>
+                    <h2 className="text-base font-black text-white truncate max-w-[220px]">
+                      @{userData.username}
+                    </h2>
+                  </div>
+                  <button
+                    onClick={() => setMobileStatsOpen(false)}
+                    className="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 text-xs font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Mobile Stats 3-column */}
+                <div className="grid grid-cols-3 gap-1.5 py-1 text-center">
+                  <div className="bg-slate-900/80 p-2 rounded-xl border border-slate-800">
+                    <span className="text-[8px] text-slate-400 uppercase font-semibold block">Total</span>
+                    <span className="text-sm font-black text-white">{userData.totalSubmissions}</span>
+                  </div>
+                  <div className="bg-slate-900/80 p-2 rounded-xl border border-slate-800">
+                    <span className="text-[8px] text-slate-400 uppercase font-semibold block">Streak</span>
+                    <span className="text-sm font-black text-emerald-400">{userData.currentStreak}d</span>
+                  </div>
+                  <div className="bg-slate-900/80 p-2 rounded-xl border border-slate-800">
+                    <span className="text-[8px] text-slate-400 uppercase font-semibold block">Longest</span>
+                    <span className="text-sm font-black text-pink-400">{userData.longestStreak}d</span>
+                  </div>
+                </div>
+
+                {/* LeetCode stats breakdown if available */}
+                {userData.platform === 'leetcode' && userData.leetcodeStats && (
+                  <div className="grid grid-cols-3 gap-1.5 py-0.5 text-center">
+                    <div className="bg-emerald-950/40 p-1.5 rounded-lg border border-emerald-800/40">
+                      <span className="text-[8px] text-emerald-400 font-bold block">Easy</span>
+                      <span className="text-xs font-black text-white">{userData.leetcodeStats.easySolved}</span>
+                    </div>
+                    <div className="bg-amber-950/40 p-1.5 rounded-lg border border-amber-800/40">
+                      <span className="text-[8px] text-amber-400 font-bold block">Medium</span>
+                      <span className="text-xs font-black text-white">{userData.leetcodeStats.mediumSolved}</span>
+                    </div>
+                    <div className="bg-rose-950/40 p-1.5 rounded-lg border border-rose-800/40">
+                      <span className="text-[8px] text-rose-400 font-bold block">Hard</span>
+                      <span className="text-xs font-black text-white">{userData.leetcodeStats.hardSolved}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Camera & Day/Night mode toggles */}
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    onClick={() => {
+                      setCameraMode(cameraMode === 'drive' ? 'orbit' : 'drive')
+                      setMobileStatsOpen(false)
+                    }}
+                    className={`py-2 rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5 ${
+                      cameraMode === 'drive' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-200'
+                    }`}
+                  >
+                    <span>{cameraMode === 'drive' ? 'Orbit Cam' : 'Drive Car'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsNight(!isNight)}
+                    className="py-2 bg-slate-800 text-white rounded-xl text-xs font-bold border border-slate-700 flex items-center justify-center gap-1.5"
+                  >
+                    {isNight ? <span>☀️ Day Mode</span> : <span>🌙 Night Mode</span>}
+                  </button>
+                </div>
+
+                {/* Weather & Snapshot toggles */}
+                <div className="grid grid-cols-4 gap-1 pt-1 text-[10px] font-bold">
+                  <button
+                    onClick={() => setCloudsVisible(!cloudsVisible)}
+                    className={`py-1.5 rounded-lg border ${cloudsVisible ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' : 'bg-slate-900 border-slate-800 text-slate-400'}`}
+                  >
+                    ☁ Clouds
+                  </button>
+                  <button
+                    onClick={() => setFogEnabled(!fogEnabled)}
+                    className={`py-1.5 rounded-lg border ${fogEnabled ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' : 'bg-slate-900 border-slate-800 text-slate-400'}`}
+                  >
+                    🌫 Fog
+                  </button>
+                  <button
+                    onClick={() => setStarsVisible(!starsVisible)}
+                    className={`py-1.5 rounded-lg border ${starsVisible ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' : 'bg-slate-900 border-slate-800 text-slate-400'}`}
+                  >
+                    ⭐ Stars
+                  </button>
+                  <button
+                    onClick={() => setCameraMode(cameraMode === 'cinematic' ? 'drive' : 'cinematic')}
+                    className={`py-1.5 rounded-lg border ${cameraMode === 'cinematic' ? 'bg-pink-600/30 border-pink-500 text-pink-300' : 'bg-slate-900 border-slate-800 text-slate-400'}`}
+                  >
+                    🎥 Drone
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Building Inspection Floating Card (when hovering or selecting a building) */}
           {activeInspection && (
-            <div className="absolute top-24 left-6 z-20 pointer-events-auto bg-slate-900/90 border border-amber-500/50 rounded-2xl p-4 shadow-2xl backdrop-blur-md max-w-xs animate-in fade-in slide-in-from-left duration-200">
+            <div className="absolute top-16 left-3 right-3 sm:right-auto sm:left-6 sm:top-24 z-30 pointer-events-auto bg-slate-900/95 border border-amber-500/50 rounded-2xl p-3.5 sm:p-4 shadow-2xl backdrop-blur-md max-w-sm sm:max-w-xs animate-in fade-in slide-in-from-left duration-200">
               <div className="flex items-center justify-between pb-2 border-b border-slate-800">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400">
                   <Calendar className="w-3.5 h-3.5" />
